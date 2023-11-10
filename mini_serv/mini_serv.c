@@ -26,16 +26,16 @@ void fatal()
     exit(1);
 }
 
-int getid(int fd)
+t_client *getclient(int fd)
 {
     t_client *tmp = clients;
     while (tmp)
     {
         if (tmp->fd == fd)
-            return (tmp->id);
+            return (tmp);
         tmp = tmp->next;
     }
-    return (-1);
+    return (NULL);
 }
 
 int getmaxfd()
@@ -93,6 +93,26 @@ void addclient()
     FD_SET(clientfd, &allfds);
 }
 
+void rmclient(int fd)
+{
+    t_client *tmp = clients;
+    t_client *prev = NULL;
+    while (tmp)
+    {
+        if (tmp->fd == fd)
+        {
+            if (prev)
+                prev->next = tmp->next;
+            else
+                clients = tmp->next;
+            free(tmp);
+            return ;
+        }
+        prev = tmp;
+        tmp = tmp->next;
+    }
+}
+
 int main(int ac, char **av)
 {
     if (ac != 2)
@@ -140,6 +160,21 @@ int main(int ac, char **av)
                 {
                     addclient();
                     break;
+                }
+                else
+                {
+                    t_client *curr = getclient(fd);
+                    char rec;
+                    int r = recv(fd, &rec, 1, 0);
+                    if (r <= 0)
+                    {
+                        sprintf(msg, "server: client %d just left\n", curr->id);
+                        sendall(fd, msg);
+                        FD_CLR(fd, &allfds);
+                        close(fd);
+                        rmclient(fd);
+                        break;
+                    }
                 }
             }
         }
