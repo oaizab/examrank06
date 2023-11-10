@@ -175,6 +175,17 @@ int main(int ac, char **av)
                         rmclient(fd);
                         break;
                     }
+                    if (curr->new == 1)
+                    {
+                        sprintf(msg, "client %d: ", curr->id);
+                        sendall(fd, msg);
+                        curr->new = 0;
+                    }
+                    msg[0] = rec;
+                    msg[1] = '\0';
+                    sendall(fd, msg);
+                    if (rec == '\n')
+                        curr->new = 1;
                 }
             }
         }
